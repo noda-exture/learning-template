@@ -238,7 +238,16 @@ Cookie属性の仕様は[MDNのSet-Cookie解説](https://developer.mozilla.org/e
 git status --short
 ```
 
-何も表示されなければ、次を1行ずつ実行します。
+以前の `feat/cloudflare-deployment` ブランチからクローンした場合は、変更がないことを確認してから、初回だけ次を実行して最新版の `main` へ切り替えます。
+
+```sh
+git fetch origin
+git switch main
+```
+
+自分用の `wrangler.local.json` はGit対象外なので、そのまま残ります。切り替えに失敗した場合はそこで止め、表示されたエラーを確認してください。
+
+`main` にいることを `git branch --show-current` で確認したら、次を1行ずつ実行します。
 
 ```sh
 git pull --ff-only

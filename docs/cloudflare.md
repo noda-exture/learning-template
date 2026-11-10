@@ -11,7 +11,7 @@ GitHubは共通ソースの配布元です。公開先は各自のCloudflareア�
 - コマンドはターミナルに1行ずつ貼り付け、Enterを押して実行します。処理が終わり、次のコマンドを入力できる状態になってから進みます。
 - エラーで止まった場合は、後続のコマンドを続けず、末尾の「困ったとき」で該当する対処を確認します。
 - この手順の `my-learning-store` は例です。そのまま使っても構いません。アカウントのサブドメインの例 `haru-learning` は、登録時に自分の希望名へ置き換えます。
-- GitHub上では[この手順書の最新版](https://github.com/noda-exture/learning-template/blob/feat/cloudflare-deployment/docs/cloudflare.md)を開いてください。URLにコミット番号が入っているページは更新されません。
+- GitHub上では[この手順書の最新版](https://github.com/noda-exture/learning-template/blob/main/docs/cloudflare.md)を開いてください。URLにコミット番号が入っているページは更新されません。
 
 先に、3種類の名前を区別します。
 
@@ -86,10 +86,10 @@ pwd
 ### 2-2. ソースを取得する
 
 ```sh
-git clone --branch feat/cloudflare-deployment https://github.com/noda-exture/learning-template.git my-learning-store
+git clone --branch main https://github.com/noda-exture/learning-template.git my-learning-store
 ```
 
-Cloudflare対応は現在 `feat/cloudflare-deployment` ブランチにあるため、`--branch` の指定を省略しません。
+`main` が共通ソースの最新版です。このコマンドで `main` ブランチを取得します。
 
 `git clone` によって、現在地の中に `my-learning-store` フォルダが作成されます。先に同名フォルダを作る必要はありません。既に同名フォルダがある場合は、このコマンドの末尾と次の `cd` に同じ別名を指定します。途中でGitHubのログイン画面が出たら、リポジトリへアクセスできるアカウントで認証します。
 
@@ -291,7 +291,7 @@ https://my-learning-store.haru-learning.workers.dev/lab/
 | `command not found`・「認識されません」が出ます | 手順1で該当ソフトをインストールし、ターミナルを開き直します。 |
 | Windowsで `npm.ps1` の実行が禁止されます | `npm ci` は `npm.cmd ci`、`npm run cf:deploy` は `npm.cmd run cf:deploy` のように置き換えます。 |
 | `package.json` がないという `ENOENT` が出ます | 実行場所が違います。`pwd` と `ls` を確認し、プロジェクトのフォルダへ `cd` で移動します。 |
-| `Missing script: cf:deploy` などが出ます | `git branch --show-current` を実行し、`feat/cloudflare-deployment` か確認します。別フォルダや古いソースを使っていないか、手順2と照合します。 |
+| `Missing script: cf:deploy` などが出ます | `git branch --show-current` を実行し、`main` か確認します。別フォルダや古いソースを使っていないか、手順2と照合します。 |
 | クローン時に `destination path ... already exists` と出ます | 同名フォルダがあります。既存のフォルダを削除せず、別のフォルダ名を指定してクローンします。 |
 | クローン時に `Repository not found`・認証エラーが出ます | 下記の「GitHub認証で止まった場合」を確認します。 |
 | `npm ci` のダウンロードが失敗します | インターネット接続を確認し、同じフォルダで `npm ci` を再実行します。会社のネットワーク制限の場合は管理者へ確認します。 |
