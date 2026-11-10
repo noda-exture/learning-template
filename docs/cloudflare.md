@@ -130,9 +130,35 @@ https://my-learning-store.noda-learning.workers.dev
 
 先頭の `my-learning-store` は `wrangler.local.json` のWorker名から自動で付くため、この入力欄には含めません。
 
+**JSONの `name` と、ここで登録するサブドメインは別の設定です。一致させる必要はありません。** 公開URLの各部分は次のように決まります。
+
+```text
+https://<JSONのname>.<登録したサブドメイン>.workers.dev
+```
+
+`https://noda-learning.workers.dev` のようにアカウントのサブドメインだけで開いても、このサイトの公開URLにはなりません。必ずWorker名を含むURLを使います。
+
+### 名前の入力でエラーになった場合・Worker名を変更したい場合
+
+| 状況 | 対処 |
+| --- | --- |
+| サブドメインが `unavailable` と表示されます | 使用済みです。その入力欄で別の名前を指定します。JSONの `name` を変更しても、このエラーは解消しません。 |
+| サブドメインが `invalid` と表示されます | ドットや `workers.dev` を含めず、`noda-learning` のような名前だけを入力し直します。 |
+| Worker名の形式に関するエラーが出ます・公開URLの先頭を変更したいです | `wrangler.local.json` の3行目の `name` を修正して保存し、下記のコマンドで再デプロイします。 |
+
+Worker名を修正した場合は、プロジェクトのフォルダで次を実行します。
+
+```sh
+npm run cf:deploy
+```
+
+このコマンドでビルドとデプロイを実行するため、別途ビルドコマンドを実行する必要はありません。**デプロイの成功を確認してから、出力された新しいURLを開きます。** 公開済みのWorker名を変更すると別のWorkerになり、以前のデータは引き継がれず、以前のWorkerも残ります。
+
 ### 公開URLを開く
 
-成功すると公開URLが出力されます。URLをブラウザで開きます。例えばWorker名が `my-learning-store`、アカウントのサブドメインが `your-name` の場合は、次のURLになります。
+成功すると公開URLが出力されます。**ターミナルに表示されたURLをそのまま開いてください。** 初回公開直後に接続できない場合は、反映待ちの可能性もあるため、数秒〜数分待って再度アクセスします。これは待ち時間の目安であり、コマンドがエラーで終了した場合は、待つだけでは公開されません。エラー内容を確認して対処します。
+
+数分待っても開けない場合は、URLの綴り、JSONの `name`、登録したサブドメイン、デプロイの成功を確認してください。例えばWorker名が `my-learning-store`、アカウントのサブドメインが `your-name` の場合は、次のURLになります。
 
 ```text
 https://my-learning-store.your-name.workers.dev/classic/
