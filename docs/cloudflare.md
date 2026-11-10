@@ -89,13 +89,48 @@ npm run cf:whoami
 
 表示された公開先が自分のCloudflareアカウントであることを確認し、手順6へ進みます。複数のアカウントに所属している場合は、`wrangler.local.json` に `"account_id": "公開先のAccount ID"` を追加すると公開先を固定できます。Account IDは `cf:whoami` で確認できます。
 
-初回にworkers.devのサブドメイン登録を求められた場合は、画面の案内に従って登録します。Cloudflare管理画面の **Workers & Pages** でも設定できます。
-
 ## 6. 公開する
 
 ```sh
 npm run cf:deploy
 ```
+
+### 初回にサブドメイン登録を聞かれた場合
+
+アカウントのworkers.devサブドメインが未登録の場合、次の質問が表示されます。既に登録済みの場合、この操作は不要です。
+
+```text
+Would you like to register a workers.dev subdomain now?
+```
+
+これは「workers.devのサブドメインを今登録しますか？」という意味です。**`Y` を入力してEnterを押します。**
+
+続けて、使いたいサブドメインの名前を聞かれます。
+
+```text
+What would you like your workers.dev subdomain to be?
+It will be accessible at https://<subdomain>.workers.dev
+```
+
+ここには **`workers.dev` の直前に入る名前だけ**を入力してEnterを押します。例えば次のように入力します。
+
+```text
+noda-learning
+```
+
+**他の人が既に登録している名前は使えません。** `Subdomain is unavailable, please try a different subdomain` と表示された場合は、数字や別の単語を足して、別の名前を入力します（例：`noda-learning-2026`）。これらの例も使用できるとは限らないため、登録できる名前を選びます。
+
+ドットやURL全体は入力しません。`my-learning-store.noda` や `my-learning-store.noda.workers.dev` と入力すると、`invalid`（無効）になります。
+
+Worker名が `my-learning-store`、ここで登録した名前が `noda-learning` の場合、公開URLは次の形になります。
+
+```text
+https://my-learning-store.noda-learning.workers.dev
+```
+
+先頭の `my-learning-store` は `wrangler.local.json` のWorker名から自動で付くため、この入力欄には含めません。
+
+### 公開URLを開く
 
 成功すると公開URLが出力されます。URLをブラウザで開きます。例えばWorker名が `my-learning-store`、アカウントのサブドメインが `your-name` の場合は、次のURLになります。
 
