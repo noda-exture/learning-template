@@ -1,3 +1,4 @@
+import './product-options.mjs';
 import {view,layout} from './views.mjs';
 let state,busy=false,renderId=0;
 window.dataLayer=window.dataLayer||[];

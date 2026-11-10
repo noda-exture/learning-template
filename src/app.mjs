@@ -1,3 +1,4 @@
+import {selectAttributes,lineKey,eventItem,variantPrice,pricedItem} from '../public/variants.mjs';
 import {normalizeEmail,validEmail,hashPassword,verifyPassword,memberFields,hydrateMember,publicState} from './accounts.mjs';
 import {injectCommonTags} from './common-tags.mjs';
 import {payments,totals,checkoutRedirect} from '../public/checkout.mjs';
@@ -52,7 +53,7 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  if(['400','500','503'].includes(scenario))return flowError(Number(scenario),'検証用エラーです。処理は実行していません。');
  if(scenario!=='200')return flowError(400,'未対応の検証ステータスです。');
  }
- const ecommerce=()=>{const items=state.cart.map(i=>({...products.find(p=>p.id===i.id),qty:i.qty}));return{currency:'JPY',value:totals(items,state.coupon).total,items:items.map(p=>({item_id:p.id,item_name:p.name,price:p.price,quantity:p.qty}))};};
+ const ecommerce=()=>{const items=state.cart.map(i=>pricedItem(products.find(p=>p.id===i.id),i));return{currency:'JPY',value:totals(items,state.coupon).total,items:items.map(eventItem)};};
  if(action==='register-review'){
  if(state.user)return flowError(409,'ログアウトしてから新規登録してください。');
  const name=String(data.name||'').trim(),email=normalizeEmail(data.email),password=String(data.password||'');
@@ -93,7 +94,7 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  profile.email=email;
  state.profile=profile;state.user.name=profile.name;next='/account/profile?saved=1';
  }else if(action==='cart'){
- if(data.remove){state.cart=state.cart.filter(p=>p.id!==data.remove);state.checkoutToken=randomUUID();}
+ if(data.remove){state.cart=state.cart.filter(p=>lineKey(p)!==data.remove);state.checkoutToken=randomUUID();}
  else{if(!state.cart.length)return flowError(409,'カートは空です。');next=state.user?'/checkout/shipping':'/login';}
  }else if(action==='shipping'||action==='payment'){
  if(!state.user)return flowError(401,'ログインが必要です。');
@@ -117,8 +118,8 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  if(action==='add'){
  const reply=(status,message,event=null)=>{
  if(!productPost && path.startsWith('/api/'))return api({status,message,error:status>=400?message:undefined,event,cart:state.cart},status);
- const v=view('/product/'+data.id,state,'classic','',{status,message,scenario:data.scenario||'200'});
- const init=`<script>window.dataLayer=window.dataLayer||[];${event?`window.dataLayer.push(${json(event)});`:''}</script>`;
+ const v=view('/product/'+data.id,state,'classic','',{status,message,scenario:data.scenario||'200',values:data});
+ const init=`<script type="module" src="/product-options.mjs"></script><script>window.dataLayer=window.dataLayer||[];${event?`window.dataLayer.push(${json(event)});`:''}</script>`;
  return respond(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(v.title)} | Exture Store</title><link rel="stylesheet" href="/style.css"></head><body><div id="app">${layout(v.html,state,'classic')}</div>${init}</body></html>`,status);
  };
  if(productPost)data.id=productPost[1];
@@ -126,12 +127,16 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  const errors={'400':'検証用の入力エラーです。商品は追加していません。','500':'検証用のサーバー内部エラーです。商品は追加していません。','503':'検証用の一時利用不可です。商品は追加していません。'};
  if(errors[scenario])return reply(Number(scenario),errors[scenario]);
  if(scenario!=='200')return reply(400,'未対応の検証ステータスです。');
- const p=products.find(p=>p.id===data.id),qty=Number(data.qty),old=state.cart.find(p=>p.id===data.id);
- if(!p||!Number.isInteger(qty)||qty<1||qty>20||(old?.qty||0)+qty>20)return reply(400,'数量は商品ごとに1〜20個で指定してください。');
- if(old)old.qty+=qty;else state.cart.push({id:p.id,qty});
- state.checkoutToken=randomUUID();event={event:'add_to_cart',ecommerce:{currency:'JPY',value:p.price*qty,items:[{item_id:p.id,item_name:p.name,price:p.price,quantity:qty}]}};
+ const p=products.find(p=>p.id===data.id),qty=Number(data.qty);
+ if(!p)return reply(404,'商品が見つかりません。');
+ const attributes=selectAttributes(p,data);
+ if(!attributes)return reply(400,'色・サイズなどの選択内容を確認してください。');
+ const item={id:p.id,qty,attributes},old=state.cart.find(i=>lineKey(i)===lineKey(item));
+ if(!p||!Number.isInteger(qty)||qty<1||qty>20||(old?.qty||0)+qty>20)return reply(400,'数量は同じ商品・属性の組み合わせごとに1〜20個で指定してください。');
+ if(old)old.qty+=qty;else state.cart.push(item);
+ state.checkoutToken=randomUUID();event={event:'add_to_cart',ecommerce:{currency:'JPY',value:variantPrice(p,attributes)*qty,items:[eventItem({...p,qty,attributes,price:variantPrice(p,attributes)})]}};
  return reply(200,`${p.name}を${qty}個、カートに追加しました。`,event);
- }else if(action==='remove'){state.cart=state.cart.filter(p=>p.id!==data.id);state.checkoutToken=randomUUID();
+ }else if(action==='remove'){state.cart=state.cart.filter(p=>lineKey(p)!==(data.lineKey||data.id));state.checkoutToken=randomUUID();
  }else if(action==='login'){
  const email=normalizeEmail(data.email);let member=accounts.find(a=>a.email===email);
  const isDemo=email==='demo@example.test'&&data.password==='demo-password';
@@ -150,10 +155,10 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  else{
  if(!state.cart.length||data.checkoutToken!==state.checkoutToken)return flowError(409,'注文内容が変更されました。再確認してください。');
  if(!state.shipping||!state.payment)return flowError(409,'送り先と支払い方法を入力してください。');
- const items=state.cart.map(i=>({...products.find(p=>p.id===i.id),qty:i.qty}));
+ const items=state.cart.map(i=>pricedItem(products.find(p=>p.id===i.id),i));
  const order={id:randomUUID(),token:state.checkoutToken,at:Date.now(),items,...totals(items,state.coupon),shipping:{...state.shipping},payment:state.payment,coupon:state.coupon||''};
  state.orders.unshift(order);state.cart=[];state.checkoutToken=randomUUID();next='/complete/'+order.id;
- event={event:'purchase',ecommerce:{transaction_id:order.id,currency:'JPY',value:order.total,items:items.map(p=>({item_id:p.id,item_name:p.name,price:p.price,quantity:p.qty}))}};
+ event={event:'purchase',ecommerce:{transaction_id:order.id,currency:'JPY',value:order.total,items:items.map(eventItem)}};
  }
  }else return api({error:'操作が見つかりません。'},404);
  if(path.startsWith('/api/'))return api({next,event});
@@ -168,7 +173,7 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  const destination=checkoutRedirect(sub,state);if(destination)return redirect('/'+mode+destination);
  const v=view(sub,state,mode,u.search);if(v.redirect)return redirect('/'+mode+v.redirect);const flash=state.flash;delete state.flash;
  const body=mode==='spa'?'<p class="empty">読み込み中です…</p>':layout(v.html,state,mode);
- const init=mode==='classic'?`<script>window.dataLayer=window.dataLayer||[];window.dataLayer.push(${json({event:'page_view',page_path:path+u.search,render_mode:mode})});${v.event?`window.dataLayer.push(${json(v.event)});`:''}${flash?`window.dataLayer.push(${json(flash)});`:''}</script>`:'<script type="module" src="/spa.mjs"></script>';
+ const init=mode==='classic'?`<script type="module" src="/product-options.mjs"></script><script>window.dataLayer=window.dataLayer||[];window.dataLayer.push(${json({event:'page_view',page_path:path+u.search,render_mode:mode})});${v.event?`window.dataLayer.push(${json(v.event)});`:''}${flash?`window.dataLayer.push(${json(flash)});`:''}</script>`:'<script type="module" src="/spa.mjs"></script>';
  return respond(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(v.title)} | Exture Store</title><link rel="stylesheet" href="/style.css"></head><body><div id="app">${body}</div>${init}</body></html>`,v.status||200);
  }
  if(path==='/lab')return redirect('/lab/');

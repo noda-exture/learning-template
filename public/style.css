@@ -14,3 +14,5 @@
 header{flex-wrap:wrap}.header-search.search{flex:0 0 100%;max-width:none;justify-content:flex-end;margin-top:0}.header-search input{flex:0 1 340px}.header-search input,.header-search button{font-size:12px;padding:8px 12px}.search-count{color:var(--muted);font-size:12px;margin:20px 0}.search-count a{text-decoration:underline}@media(max-width:760px){.header-search.search{order:4}.header-search input{flex:1}}
 
 .registration-summary{background:#eeeee5;padding:24px;margin:24px 0}.registration-summary dt{font-size:11px;color:var(--muted);margin-top:16px}.registration-summary dt:first-child{margin-top:0}.registration-summary dd{margin:6px 0;overflow-wrap:anywhere}.register-link{display:block;text-align:center;border:1px solid var(--green);padding:14px;margin-top:24px}
+
+.product-option{display:grid;gap:8px;margin:16px 0}.product-option select{width:100%;max-width:360px;padding:12px;background:white;border:1px solid #b8bdb1;color:var(--ink);font:inherit}.product-option select:focus-visible{outline:3px solid #bc7945;outline-offset:3px}.item-attributes{color:var(--muted);font-size:12px;overflow-wrap:anywhere}

@@ -34,7 +34,8 @@ const registrations = await Promise.all([c.post('register-confirm', {registratio
 assert.deepEqual(registrations.map(r => r.status), [200, 200]);
 assert.equal((await Promise.all(registrations.map(r => r.json()))).filter(r => r.event?.event === 'sign_up').length, 1);
 assert.equal((await c.post('login', {email, password})).status, 200);
-await c.post('add', {id: 'mug', qty: 1});
+await c.post('add', {id: 'mug', qty: 1, option_color: 'アイボリー', option_size: '350ml'});
+assert.deepEqual((await c.state()).cart[0].attributes.map(a => a.value), ['アイボリー', '350ml']);
 assert.equal((await c.post('add', {id: 'mug', qty: 1, scenario: '503'})).status, 503);
 assert.equal((await c.state()).cart[0].qty, 1);
 await c.post('shipping', sampleShipping);
@@ -48,5 +49,6 @@ const fresh = client();
 assert.equal((await fresh.state()).user, null);
 assert.equal((await fresh.post('login', {email, password})).status, 200);
 assert.equal((await fresh.state()).orders.length, 1);
+assert.deepEqual((await fresh.state()).orders[0].items[0].attributes.map(a => a.value), ['アイボリー', '350ml']);
 assert.equal((await c.req('/api/add', {padding: 'x'.repeat(65536)})).status, 413);
 console.log('Cloudflare runtime: HTML/SPA/assets, registration, login, concurrent duplicate prevention, persistence across sessions and body limit passed.');
