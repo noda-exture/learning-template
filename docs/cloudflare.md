@@ -294,6 +294,54 @@ npm run cf:deploy
 
 ### 商品情報・色・サイズ・価格を変更する場所
 
+#### どのファイルの、どこを編集するか
+
+**自分用にクローンしたフォルダの `public/catalog.mjs` をエディタで開きます。** 例えばクローン先が `my-learning-store` なら、`my-learning-store/public/catalog.mjs` です。
+
+現在のファイルでは、マグは3行目の `id:'mug'`、トートは5行目の `id:'bag'` にあります。行番号が変わっている場合は、エディタの検索で `id:'bag'` を探してください。一つの商品が1行にまとまっているので、その行の変更したい値だけを書き換えます。
+
+| 変更したいもの | トートの行で編集する箇所 | 反映される場所 |
+| --- | --- | --- |
+| 商品名 | `name:'キャンバス トート'` の文字列 | 商品一覧・詳細・カートなどの商品名です。 |
+| 商品説明 | `description:'必要なものを…'` の文字列 | 商品詳細の説明文です。 |
+| 基本価格 | `price:3200` の数値 | 商品一覧の価格と、サイズ別価格の計算の基準です。 |
+| 選べる色 | `id:'color'` の属性にある `values:['ナチュラル','ブラック','オリーブ']` | 商品詳細の「色」の選択肢です。 |
+| 選べるサイズ | `id:'size'` の属性にある `values:['S','M','L']` | 商品詳細の「サイズ」の選択肢です。 |
+| サイズごとの価格差 | `priceAdjustments:{S:0,M:600,L:1200}` の数値 | サイズ選択後の価格、カート・注文の金額です。数値は販売価格そのものではなく、基本価格への加算額です。 |
+| イラストの色 | 商品直下の `color:'#9b9e7e'` | 商品イラストの表示色です。「色」の選択肢とは連動しません。 |
+
+文字列の引用符、項目の区切りのカンマ、角括弧・波括弧は残します。価格は `4000` のように半角数字で入力し、`4,000` や `¥4000` とは書きません。商品の `id:'bag'` はカートなどの識別に使うため、名前や価格を変えるときも変更しません。
+
+#### 例：トートのMサイズだけを4,000円にする
+
+トートの基本価格が `price:3200` の場合、Mサイズの加算額を600円から800円へ変更します。
+
+変更前：
+
+```js
+priceAdjustments:{S:0,M:600,L:1200}
+```
+
+変更後：
+
+```js
+priceAdjustments:{S:0,M:800,L:1200}
+```
+
+この変更で **Sは3,200円、Mは4,000円、Lは4,400円**になります。`M:4000` とすると、基本価格3,200円に加算されて7,200円になるので注意してください。
+
+保存後、クローンしたプロジェクトのフォルダ内で実行します。
+
+```sh
+npm run cf:deploy
+```
+
+成功したら、公開URLの末尾に `/classic/product/bag` または `/spa/product/bag` を付けて開き、再読み込みして「サイズ」をMに変更します。**表示価格が4,000円になれば反映完了です。** カートに追加すると、その価格で計算されます。公開済みの注文履歴の金額は変わりません。
+
+選択肢を増やす場合も同じファイルを編集します。例えばXLを追加する場合は、サイズの `values` を `['S','M','L','XL']` にし、`priceAdjustments` に `XL:1800` を追加すると、基本価格3,200円に対してXLは5,000円になります。
+
+#### 属性設定の書き方と動作
+
 商品情報は `public/catalog.mjs` の `products` にあります。商品ごとに `attributes` で色・サイズなどの選択肢を設定できます。例えば、既存の商品オブジェクトの価格と属性を次のように設定します（商品全体ではなく一部の例です）。
 
 ```js
@@ -345,6 +393,93 @@ URLに `public` は含めません。`<Worker名>` と `<登録したサブド�
 保存後に `npm run cf:deploy` を実行し、成功したら公開ページを再読み込みします。ECのMPA・SPA、静的ページ一覧、`public/lab/` に追加したHTMLに共通で挿入されます。個別HTMLにも同じタグを貼ると二重読み込みになるため、共通設定したタグは重複して配置しません。
 
 MPAはページのHTML取得ごと、SPAは初回表示・ブラウザの再読み込み時にタグを読み込みます。SPAの画面内遷移だけではタグを再実行しません。共通タグはブラウザへ配信されるため、秘密のAPIキーやパスワードは記載しません。
+
+### サーバー側で発行するCookieを変更・追加する場所
+
+この教材では、サーバーがHTTPレスポンスの `Set-Cookie` ヘッダーでCookieを発行します。Cookieそのものはブラウザに保存されます。`config/tags/` に貼り付けるJavaScriptのCookie設定とは別です。
+
+#### 既存の検証用Cookieを変更する場合
+
+**`config/lab.mjs` を開きます。** 初期状態では次の設定です。
+
+```js
+export const cookieConfig = {
+  enabled: true, name: 'lab_fpid', maxAge: 60 * 60 * 24 * 365,
+  httpOnly: true, sameSite: 'Lax', secure: 'auto', path: '/',
+};
+```
+
+| 変更したいもの | 編集する項目 | 例・反映される内容 |
+| --- | --- | --- |
+| Cookie名 | `name: 'lab_fpid'` | `'my_fpid'` に変えると、その名前で発行します。 |
+| 有効期間 | `maxAge` | 単位は秒です。30日なら `60 * 60 * 24 * 30` にします。応答ごとに期限を更新します。 |
+| JavaScriptから読めるか | `httpOnly` | `true` なら `document.cookie` から読めません。読み取りを検証したい場合だけ `false` にします。 |
+| クロスサイトでの送信条件 | `sameSite` | 初期値は `'Lax'` です。`'None'` を試す場合はHTTPSで `Secure` が必要です。 |
+| HTTPS限定の送信 | `secure` | `'auto'` はHTTPS時だけSecure属性を付けます。公開先ではHTTPSなので付与されます。 |
+| 送信対象のパス | `path: '/'` | 初期値はサイト全体です。範囲を狭めると対象外のパスには送信されません。 |
+| 発行の有効・無効 | `enabled` | `false` で以降の発行を止めます。ブラウザ内の既存Cookieは自動削除しません。 |
+
+例えば名前を `my_fpid`、有効期間を30日にする場合は、次の行に変更します。
+
+```js
+  enabled: true, name: 'my_fpid', maxAge: 60 * 60 * 24 * 30,
+```
+
+この設定は既存の検証用Cookie一つを変更するもので、二つ目を追加する操作ではありません。値はサーバーが作るランダムIDです。既存の有効なIDが送られてくれば再利用します。Adobe FPIDとの連携は未実装です。
+
+カート・ログイン用の `lab_session` は別のCookieです。検証用Cookieの名前に `lab_session` を指定しないでください。初期設定はDomainを指定せず、アクセスしたホストだけで使います。
+
+#### 別のCookieをもう一つ追加する場合（コード編集）
+
+**追加の発行処理は `src/app.mjs` に書きます。** 以下は、既存Cookieを残したまま、30日間の検証用Cookie `lab_custom_id` を追加する例です。手順書のサンプルであり、最初から発行されているCookieではありません。
+
+1. `src/app.mjs` をエディタで開きます。
+2. ファイル内で `headers.set('Content-Type',type);` を検索します。`async function respond(...)` の中に一か所あります。
+3. **その文字列の直前に改行を入れ、次のコードを追加します。** 元の `headers.set(...)` と後ろの `return new Response(...)` は残します。
+
+```js
+const customCookieName = 'lab_custom_id';
+const receivedId = cookies[customCookieName];
+const customId = typeof receivedId === 'string'
+  && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(receivedId)
+  ? receivedId
+  : randomUUID();
+headers.append(
+  'Set-Cookie',
+  `${customCookieName}=${customId}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`
+);
+```
+
+この位置に追加すると、ログイン・ログアウトでセッションCookieを再発行した後も、追加Cookieを付けられます。`cookies`・`randomUUID`・`secure` は既存コードで定義済みなので、そのまま使えます。`headers.append` を `headers.set` に変えると既存のSet-Cookieを上書きしてしまうため、`append` のまま使います。
+
+| 追加例で変える場所 | 反映される内容 |
+| --- | --- |
+| `'lab_custom_id'` | 追加するCookieの名前です。既存Cookieと重複しない名前にします。 |
+| `Max-Age=2592000` | 有効期間です。2,592,000秒＝30日です。 |
+| `HttpOnly; SameSite=Lax` | Cookieの属性です。初期例はJavaScriptから読めない設定です。 |
+
+追加例はランダムIDの保存・再送を検証するためのもので、会員認証やサーバー側データとの紐付けは行いません。通常のアプリ応答に追加されますが、Worker側で先に返す413エラーなどには付きません。
+
+#### 保存して公開先で確認する
+
+編集したファイルを保存し、プロジェクトのフォルダで実行します。
+
+```sh
+npm run cf:deploy
+```
+
+成功後、公開サイトをブラウザで開いて次を確認します。ChromeまたはEdgeの場合の例です。
+
+1. 開発者ツールを開き、**Network** タブを選んでページを再読み込みします。
+2. `/classic/` などのページのリクエストを選び、**Headers → Response Headers → Set-Cookie** に設定したCookie名があることを確認します。
+3. **Application → Storage → Cookies → 公開サイトのURL** を開き、Cookieの名前・値・有効期限・HttpOnly・Secure・SameSiteを確認します。
+4. 再読み込みし、有効なIDが再利用されることを確認します。`HttpOnly` のCookieが `document.cookie` に出ないのは正常です。
+
+ローカルのNode.js版で確認する場合は、`npm run dev` をCtrl+Cで止めて起動し直します。Cloudflareのローカル版は `npm run cf:dev` で確認します。
+
+名前やPathを変更しても古いCookieは残ります。比較時は開発者ツールで自分が追加した検証用Cookieだけを削除し、再読み込みしてください。`lab_session` を削除するとログイン・カートのセッションが切り替わります。また、追加コードを消して再デプロイしても、発行済みCookieは有効期限まで残るため、必要に応じてブラウザから削除します。
+
+Cookie属性の仕様は[MDNのSet-Cookie解説](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie)も参照してください。
 
 ### 配布元の新しい変更を取り込む場合
 
