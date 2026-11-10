@@ -6,15 +6,30 @@ GitHubは共通ソースの配布元です。公開先は各自のCloudflareア�
 
 ## 1. 準備
 
+- GitHubアカウントとCloudflareアカウントを用意します。未登録の場合は、[GitHub](https://github.com/)と[Cloudflare](https://dash.cloudflare.com/sign-up)で作成します。
+- GitHubで配布元のリポジトリを開けることと、Cloudflareにブラウザでログインできることを確認します。
 - GitとNode.js 22以上をインストールします（Node.jsはLTS版を推奨します）。
-- Cloudflareアカウントを作成し、ブラウザでログインできる状態にします。
 - 配布元が非公開の場合は、GitHubリポジトリへのアクセス権が必要です。
 
 この教材はCloudflare WorkersとSQLite-backed Durable Objectsを使用します。保存先は初回デプロイ時に作成されるため、DBのIDを手動で取得する必要はありません。Freeプランでも利用できますが、利用上限は[Cloudflareの料金・制限](https://developers.cloudflare.com/durable-objects/platform/pricing/)を確認してください。
 
 ## 2. クローンする
 
-Cloudflare対応を確認中のブランチを取得します。
+まずターミナルを開き、**プロジェクトのフォルダを作りたい場所（親フォルダ）へ移動します**。例えば「ドキュメント」内に作る場合は、次を実行します。
+
+macOSの場合：
+
+```sh
+cd ~/Documents
+```
+
+Windows（PowerShell）の場合：
+
+```powershell
+cd ([Environment]::GetFolderPath('MyDocuments'))
+```
+
+別の場所に作る場合は、`cd "作成先の親フォルダのパス"` で移動します。移動後、次を順番に実行してCloudflare対応を確認中のブランチを取得します。
 
 ```sh
 git clone --branch feat/cloudflare-deployment https://github.com/noda-exture/learning-template.git my-learning-store
@@ -22,7 +37,9 @@ cd my-learning-store
 npm ci
 ```
 
-`my-learning-store` は自分のPC上のフォルダ名です。配布元に変更をpushする必要はありません。既にこのフォルダがある場合は別名を指定します。
+`git clone` によって、移動先の中に `my-learning-store` フォルダが新しく作られます。先に同名フォルダを作る必要はありません。`cd my-learning-store` は、作成されたプロジェクトの中へ移動するコマンドです。**以降のコマンドは、このプロジェクトのフォルダ内で実行します。**
+
+`my-learning-store` は自分のPC上のフォルダ名です。配布元に変更をpushする必要はありません。既にこのフォルダがある場合は、`git clone` の末尾と、その次の `cd` に同じ別名を指定します。
 
 ## 3. 自分用の設定を作る
 
@@ -32,7 +49,17 @@ npm run cf:setup -- --name my-learning-store
 
 `my-learning-store` はCloudflare上のWorker名で、公開URLの先頭になります。英小文字から始め、英小文字・数字・ハイフンを使います。同じCloudflareアカウントにある既存Workerと重複しない名前を選びます。同名WorkerへのデプロイはそのWorkerの更新になります。
 
-作成される `wrangler.local.json` はGit対象外です。共通の `wrangler.json` を書き換える必要はありません。設定ファイルが既にある場合、上書きせず停止します。名前を変更する場合は、このファイルの `name` を編集します。公開後に名前を変えると別のWorker・別の保存データになるため、通常の更新では変更しません。
+作成される `wrangler.local.json` は、プロジェクト直下（`package.json` と同じ場所）にあり、Git対象外です。共通の `wrangler.json` を書き換える必要はありません。設定ファイルが既にある場合、上書きせず停止します。
+
+Worker名を変更する場合は、エディタで **`wrangler.local.json` の3行目**を開きます。生成直後は次の行になっています。
+
+```json
+  "name": "my-learning-store",
+```
+
+右側の `my-learning-store` だけを希望の名前に変更して保存します。引用符と末尾のカンマは残します。自分で行を追加した場合は行番号がずれるため、`"name"` を検索してください。手順3のコマンドで希望の名前を指定済みなら、編集は不要です。
+
+公開後に名前を変えると別のWorker・別の保存データになるため、通常の更新では変更しません。
 
 ## 4. ローカルでCloudflare版を確認する
 
@@ -48,10 +75,19 @@ npm run cf:dev
 
 ```sh
 npm run cf:login
+```
+
+ブラウザが開いたら、自分のCloudflareアカウントでログインし、Wranglerへの権限付与を許可します。
+
+**「Authorization granted to Wrangler」と表示されたら、ログイン・権限付与は成功です。そのブラウザのタブ（またはウィンドウ）は閉じて大丈夫です。** 画面内の「Copy prompt」を押す必要はありません。
+
+ターミナルに戻り、ログイン処理が完了してコマンドを入力できる状態になったら、次を実行します。
+
+```sh
 npm run cf:whoami
 ```
 
-ブラウザが開いたら、自分のCloudflareアカウントで許可します。`cf:whoami` で公開先アカウントを確認します。複数のアカウントに所属している場合は、`wrangler.local.json` に `"account_id": "公開先のAccount ID"` を追加すると公開先を固定できます。Account IDは `cf:whoami` で確認できます。
+表示された公開先が自分のCloudflareアカウントであることを確認し、手順6へ進みます。複数のアカウントに所属している場合は、`wrangler.local.json` に `"account_id": "公開先のAccount ID"` を追加すると公開先を固定できます。Account IDは `cf:whoami` で確認できます。
 
 初回にworkers.devのサブドメイン登録を求められた場合は、画面の案内に従って登録します。Cloudflare管理画面の **Workers & Pages** でも設定できます。
 
