@@ -4,3 +4,7 @@ node_modules/
 .dev.vars
 .wrangler/
 .DS_Store
+.generated/
+wrangler.local.json
+.env.*
+.dev.vars.*
