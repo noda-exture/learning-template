@@ -4,7 +4,7 @@
 
 ## 自分のCloudflareへ公開する
 
-配布元をクローンして、自分の `workers.dev` に公開できます。[クローンから公開までの手順書](docs/cloudflare.md)を参照してください。公開先のWorker名・アカウントはGit対象外の `wrangler.local.json` に設定します。
+配布元をクローンして、自分の `workers.dev` に公開できます。[クローンから公開までの手順書](docs/cloudflare.md)を参照してください。`npm run cf:setup` でWorker名が `exture` の自分用設定（Git対象外の `wrangler.local.json`）を作成します。名前はそのままで使え、変更は任意です。各自のCloudflareアカウントのサブドメインで公開先を分けます。
 
 ## 導入後に編集・更新する
 

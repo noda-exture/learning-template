@@ -1,6 +1,6 @@
 # クローンして自分のCloudflareに公開する手順
 
-この手順では、配布元のlearning-templateを自分のPCにクローンし、自分のCloudflareアカウントの `https://<Worker名>.<アカウントのサブドメイン>.workers.dev` で表示します。ドメイン購入やDNS設定は不要です。
+この手順は、各自が自分のCloudflareアカウントを使う構成です。配布元のlearning-templateを自分のPCにクローンし、自分のCloudflareアカウントの `https://<Worker名>.<アカウントのサブドメイン>.workers.dev` で表示します。ドメイン購入やDNS設定は不要です。
 
 GitHubは共通ソースの配布元です。公開先は各自のCloudflareアカウントです。GitHubへのpushだけで自動デプロイする設定は、この手順では行いません。
 
@@ -18,10 +18,10 @@ GitHubは共通ソースの配布元です。公開先は各自のCloudflareア�
 | 名前 | この手順の例 | 決める場所・役割 |
 | --- | --- | --- |
 | PC上のフォルダ名 | `my-learning-store` | 手順2の `git clone` の末尾です。PC内の保存場所で、公開URLには影響しません。 |
-| Worker名 | `my-learning-store` | 手順3で設定します。`wrangler.local.json` の `name` に保存され、公開URLの先頭になります。 |
+| Worker名 | `exture` | 初期値のまま使えます。`wrangler.local.json` の `name` に保存され、公開URLの先頭になります。 |
 | アカウントのサブドメイン | `haru-learning` | 手順6で登録します。Worker名の後ろ、`workers.dev` の前になります。 |
 
-**これらの名前は一致させる必要がありません。** 上の例での完成URLは `https://my-learning-store.haru-learning.workers.dev` です。これは説明用の例なので、実際には公開成功時に表示されたURLを開きます。
+**これらの名前は一致させる必要がありません。** 上の例での完成URLは `https://exture.haru-learning.workers.dev` です。これは説明用の例なので、実際には公開成功時に表示されたURLを開きます。
 
 ## 1. 準備
 
@@ -119,25 +119,38 @@ npm ci
 
 ## 3. 自分用の設定を作る
 
-まず、Cloudflare上のサイト名（Worker名）を決めます。以下は `my-learning-store` で作る例です。変更する場合はコマンド末尾の名前を置き換えます。
+**Worker名は初期値の `exture` のまま使えます。JSONの名前変更は必須ではありません。** 次を実行して、自分用の設定ファイルを作成します。
 
 ```sh
-npm run cf:setup -- --name my-learning-store
+npm run cf:setup
 ```
 
-`my-learning-store` はCloudflare上のWorker名で、公開URLの先頭になります。英小文字から始め、英小文字・数字・ハイフンで63文字以内にします。空白・ドット・日本語は使いません。同じCloudflareアカウントにある既存Workerと重複しない名前を選びます。同名WorkerへのデプロイはそのWorkerの更新になります。
+プロジェクト直下（`package.json` と同じ場所）に、`name` が `exture` の `wrangler.local.json` が作られます。このファイルはGit対象外です。共通の `wrangler.json` を編集する必要はありません。
 
-作成される `wrangler.local.json` は、プロジェクト直下（`package.json` と同じ場所）にあり、Git対象外です。共通の `wrangler.json` を書き換える必要はありません。**成功の目印：** 「自分用のwrangler.local.jsonを作成しました」と表示されることです。設定ファイルが既にある場合は `EEXIST` で停止します。これは上書きを防ぐためなので、既存設定の名前を確認し、正しければ手順4へ進みます。
+**成功の目印：** 「自分用のwrangler.local.jsonを作成しました」と表示されることです。既にファイルがある場合は `EEXIST` で停止し、上書きしません。既存の設定を使う場合は、そのまま手順4へ進みます。公開済みの人が `git pull` しても、自分用のWorker名が自動で `exture` に変わることはありません。
 
-Worker名を変更する場合は、エディタで **`wrangler.local.json` の3行目**を開きます。生成直後は次の行になっています。
+各自が自分のCloudflareアカウントに公開し、手順6で自分のサブドメインを登録します。Worker名は全員同じ `exture` でも、例えば次のように公開先が分かれます。
+
+```text
+https://exture.haru-learning.workers.dev
+https://exture.tanaka-learning.workers.dev
+```
+
+自分のアカウントに既に `exture` というWorkerがある場合、デプロイするとそのWorkerを更新します。別のサイトとして作る場合だけ、重複しないWorker名に変更します。
+
+### 任意：exture以外のWorker名を使いたい場合
+
+エディタで **`wrangler.local.json` の3行目**を開きます。新しく生成したファイルは次の行になっています。
 
 ```json
-  "name": "my-learning-store",
+  "name": "exture",
 ```
 
-右側の `my-learning-store` だけを希望の名前に変更して保存します。引用符と末尾のカンマは残します。自分で行を追加した場合は行番号がずれるため、`"name"` を検索してください。手順3のコマンドで希望の名前を指定済みなら、編集は不要です。
+右側の `exture` だけを希望の名前に変更して保存します。英小文字から始め、英小文字・数字・ハイフンで63文字以内にし、末尾は英小文字か数字にします。引用符と末尾のカンマは残します。自分で行を追加した場合は行番号がずれるため、`"name"` を検索してください。
 
-公開後に名前を変えると別のWorker・別の保存データになるため、通常の更新では変更しません。
+設定ファイルをまだ作っていない場合は、`npm run cf:setup -- --name my-learning-store` のように、作成時に名前を指定することもできます。
+
+公開後に名前を変えると別のWorker・別の保存データになり、元のWorkerも残ります。通常の更新では名前を変えません。
 
 ## 4. ローカルでCloudflare版を確認する
 
@@ -178,7 +191,7 @@ npm run cf:whoami
 ```text
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "my-learning-store",
+  "name": "exture",
   "account_id": "ここを公開先の32桁のAccount IDに置き換えます",
   "main": "src/worker.mjs",
 ```
@@ -216,15 +229,15 @@ haru-learning
 
 **他の人が既に登録している名前は使えません。** `Subdomain is unavailable, please try a different subdomain` と表示された場合は、数字や別の単語を足して、別の名前を入力します（例：`haru-learning-2026`）。これらの例も使用できるとは限らないため、登録できる名前を選びます。
 
-ドットやURL全体は入力しません。`my-learning-store.haru` や `my-learning-store.haru.workers.dev` と入力すると、`invalid`（無効）になります。
+ドットやURL全体は入力しません。`exture.haru` や `exture.haru.workers.dev` と入力すると、`invalid`（無効）になります。
 
-Worker名が `my-learning-store`、ここで登録した名前が `haru-learning` の場合、公開URLは次の形になります。
+Worker名が `exture`、ここで登録した名前が `haru-learning` の場合、公開URLは次の形になります。
 
 ```text
-https://my-learning-store.haru-learning.workers.dev
+https://exture.haru-learning.workers.dev
 ```
 
-先頭の `my-learning-store` は `wrangler.local.json` のWorker名から自動で付くため、この入力欄には含めません。
+先頭の `exture` は `wrangler.local.json` のWorker名から自動で付くため、この入力欄には含めません。
 
 **JSONの `name` と、ここで登録するサブドメインは別の設定です。一致させる必要はありません。** 公開URLの各部分は次のように決まります。
 
@@ -256,12 +269,12 @@ npm run cf:deploy
 
 **ターミナルに表示された公開URLをそのままコピーし、ブラウザのアドレス欄に貼り付けて開いてください。** 初回公開直後に接続できない場合は、反映待ちの可能性もあるため、数秒〜数分待って再度アクセスします。これは待ち時間の目安であり、コマンドがエラーで終了した場合は、待つだけでは公開されません。エラー内容を確認して対処します。
 
-数分待っても開けない場合は、URLの綴り、JSONの `name`、登録したサブドメイン、デプロイの成功を確認してください。例えばWorker名が `my-learning-store`、アカウントのサブドメインが `haru-learning` の場合は、次のURLになります。
+数分待っても開けない場合は、URLの綴り、JSONの `name`、登録したサブドメイン、デプロイの成功を確認してください。例えばWorker名が `exture`、アカウントのサブドメインが `haru-learning` の場合は、次のURLになります。
 
 ```text
-https://my-learning-store.haru-learning.workers.dev/classic/
-https://my-learning-store.haru-learning.workers.dev/spa/
-https://my-learning-store.haru-learning.workers.dev/lab/
+https://exture.haru-learning.workers.dev/classic/
+https://exture.haru-learning.workers.dev/spa/
+https://exture.haru-learning.workers.dev/lab/
 ```
 
 `haru-learning` はCloudflare側の設定です。Worker名を変更しても、この部分は変わりません。
