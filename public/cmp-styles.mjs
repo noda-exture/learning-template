@@ -1,5 +1,5 @@
 export const cmpStyles = `
-:host{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;font-size:14px;line-height:1.7;color:#29352e;color-scheme:light}
+:host{display:block;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;font-size:14px;line-height:1.7;color:#29352e;color-scheme:light}
 *{box-sizing:border-box} [hidden]{display:none!important}
 button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #b16a36;outline-offset:3px}
 button{border:1px solid #7b897c;border-radius:5px;padding:11px 16px;background:#fff;color:#29352e;min-height:44px;font-weight:600}
@@ -8,7 +8,8 @@ button:hover{background:#edf1e8}button:disabled{cursor:default}p{margin:8px 0}h2
 .eyebrow{display:block;color:#5a685a;font-size:10px;letter-spacing:.12em;margin-bottom:6px}
 .description{font-size:13px}.demo-note{font-size:12px;color:#67583d;background:#f0ebdf;border-radius:5px;padding:10px 12px}
 .actions{display:flex;gap:8px;flex-wrap:wrap}.banner .actions{max-width:330px;justify-content:flex-end}.banner .actions button{flex:1 1 140px;white-space:nowrap}
-.launcher{position:fixed;bottom:16px;left:16px;z-index:2147482999;box-shadow:0 2px 14px #15261920;font-size:12px;padding:8px 13px;display:flex;gap:10px;align-items:center}
+.consent-footer{display:flex;justify-content:center;align-items:center;gap:10px;padding:16px 24px;border-top:1px solid #dce0d5;background:#faf9f5}
+.launcher{border:0;background:transparent;border-radius:3px;font-size:12px;padding:8px;text-decoration:underline;text-underline-offset:3px;font-weight:400}.launcher:hover{background:transparent;color:#47614e}
 .badge{background:#edf1e8;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:400}
 dialog{color:#29352e;background:#faf9f5;border:1px solid #c5cabc;border-radius:12px;padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;box-shadow:0 15px 60px #0003}
 dialog::backdrop{background:#14201980}.dialog-content{padding:28px}.dialog-header{display:flex;align-items:center;justify-content:space-between;gap:20px}.close{padding:5px 13px;font-size:22px;font-weight:400}

@@ -14,7 +14,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
       <p class="description">アクセス解析・広告などの利用目的ごとに、同意内容を選択できます。設定はいつでも変更できます。</p><p class="demo-note">${note}</p></div>
       <div class="actions"><button type="button" data-action="accept">すべて許可</button><button type="button" data-action="reject">必須のみ許可</button><button type="button" data-action="open">個別に設定</button></div>
     </section>
-    <button type="button" class="launcher" data-action="open" hidden>同意設定<span class="badge"></span></button>
+    <footer class="consent-footer" aria-label="プライバシー設定" hidden><button type="button" class="launcher" data-action="open">同意設定</button><span class="badge"></span></footer>
     <dialog aria-labelledby="settings-title" aria-describedby="settings-note">
       <div class="dialog-content"><div class="dialog-header"><h2 id="settings-title">同意設定</h2><button class="close" type="button" data-action="close" aria-label="同意設定を閉じる" autofocus>×</button></div>
       <p class="demo-note" id="settings-note">${note}</p><p class="status"></p>
@@ -28,6 +28,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
 
   const banner = root.querySelector('.banner');
   const launcher = root.querySelector('.launcher');
+  const footer = root.querySelector('.consent-footer');
   const dialog = root.querySelector('dialog');
   const feedback = root.querySelector('.feedback');
   let state = readConsent();
@@ -36,7 +37,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
   const snapshot = () => state ? structuredClone(state) : null;
   function render() {
     banner.hidden = !!state || dialog.open;
-    launcher.hidden = !state || dialog.open;
+    footer.hidden = !state || dialog.open;
     root.querySelector('.badge').textContent = consentLabel(state);
     root.querySelector('.status').textContent = state
       ? `現在：${consentLabel(state)} ｜ ${new Date(state.savedAt).toLocaleString('ja-JP')}${persisted ? '' : '（このページのみ）'}`
@@ -61,7 +62,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
     persisted = persistConsent(state);
     if (dialog.open) dialog.close();
     render();
-    launcher.focus();
+    launcher.focus({preventScroll: true});
     announce(persisted ? `同意設定を保存しました：${consentLabel(state)}` : 'ブラウザに保存できませんでした。このページ内のみ有効です。再読み込みすると以前の設定または未設定に戻ります。', !persisted);
     notify('save');
   }
@@ -76,7 +77,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
   }
   root.addEventListener('click', event => {
     const action = event.target.closest('[data-action]')?.dataset.action;
-    if (action === 'open') { render(); dialog.showModal(); banner.hidden = true; launcher.hidden = true; }
+    if (action === 'open') { render(); dialog.showModal(); banner.hidden = true; footer.hidden = true; }
     if (action === 'close') dialog.close();
     if (action === 'accept' || action === 'reject') save(Object.fromEntries(consentCategories.map(({id}) => [id, action === 'accept'])));
     if (action === 'save') save(Object.fromEntries(consentCategories.map(({id}) => [id, root.querySelector(`input[name="${id}"]`).checked])));
@@ -96,7 +97,7 @@ if (cmpConfig.enabled && !document.querySelector('[data-exture-cmp-root]')) {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   window.addEventListener('pageshow', refresh);
   window.extureConsent = Object.freeze({getState: snapshot, open: () => {
-    render(); if (!dialog.open) dialog.showModal(); banner.hidden = true; launcher.hidden = true;
+    render(); if (!dialog.open) dialog.showModal(); banner.hidden = true; footer.hidden = true;
   }});
   render();
 }
