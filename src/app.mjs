@@ -1,3 +1,4 @@
+import {injectCmp} from './cmp.mjs';
 import {selectAttributes,lineKey,eventItem,variantPrice,pricedItem} from '../public/variants.mjs';
 import {normalizeEmail,validEmail,hashPassword,verifyPassword,memberFields,hydrateMember,publicState} from './accounts.mjs';
 import {injectCommonTags} from './common-tags.mjs';
@@ -29,7 +30,7 @@ export function makeApp(store,assets,listPages=async()=>[],loadTags=async()=>({}
  headers.append('Set-Cookie',`lab_session=${sid}; Path=/; HttpOnly; SameSite=Lax${secure?'; Secure':''}`);
  const fp=cookies[cfg.name]&&/^[0-9a-f-]{36}$/i.test(cookies[cfg.name])?cookies[cfg.name]:randomUUID();
  if(cfg.enabled)headers.append('Set-Cookie',`${cfg.name}=${fp}; Path=${cfg.path}; Max-Age=${cfg.maxAge}; SameSite=${cfg.sameSite}${cfg.httpOnly?'; HttpOnly':''}${cfg.secure===true||(cfg.secure==='auto'&&secure)?'; Secure':''}`);
- async function respond(body,status=200,type='text/html; charset=utf-8'){if(type.startsWith('text/html')&&!(status>=300&&status<400)){const html=typeof body==='string'?body:new TextDecoder().decode(body);body=injectCommonTags(html,await loadTags());}if(state.user?.id){const member=accounts.find(a=>a.id===state.user.id);if(member){for(const field of memberFields)member[field]=structuredClone(state[field]??(field==='profile'?{}:[]));await store.set(accountKey,accounts);}}await store.set(sid,state);headers.set('Content-Type',type);return new Response(body,{status,headers});}
+ async function respond(body,status=200,type='text/html; charset=utf-8'){if(type.startsWith('text/html')&&!(status>=300&&status<400)){const html=typeof body==='string'?body:new TextDecoder().decode(body);body=injectCmp(injectCommonTags(html,await loadTags()));}if(state.user?.id){const member=accounts.find(a=>a.id===state.user.id);if(member){for(const field of memberFields)member[field]=structuredClone(state[field]??(field==='profile'?{}:[]));await store.set(accountKey,accounts);}}await store.set(sid,state);headers.set('Content-Type',type);return new Response(body,{status,headers});}
  async function rotateSession(){const old=sid;sid=randomUUID();state.csrf=randomUUID();await store.set(old,null);headers.delete('Set-Cookie');headers.append('Set-Cookie',`lab_session=${sid}; Path=/; HttpOnly; SameSite=Lax${secure?'; Secure':''}`);if(cfg.enabled)headers.append('Set-Cookie',`${cfg.name}=${fp}; Path=${cfg.path}; Max-Age=${cfg.maxAge}; SameSite=${cfg.sameSite}${cfg.httpOnly?'; HttpOnly':''}${cfg.secure===true||(cfg.secure==='auto'&&secure)?'; Secure':''}`);}
  const api=(body,status=200)=>respond(json(body),status,'application/json; charset=utf-8');
  const redirect=loc=>{headers.set('Location',new URL(loc,u.origin).pathname+new URL(loc,u.origin).search);return respond('',303);};

@@ -13,7 +13,8 @@
 | head・bodyの共通タグ | `config/tags/head.html` / `config/tags/body-start.html` | [4. 共通タグ](#shared-tags) |
 | 既存の検証用Cookie | `config/lab.mjs` | [5. Cookie](#cookies) |
 | 別のCookieの追加処理 | `src/app.mjs` | [5. Cookie](#cookies) |
-| GitHubの配布元から更新を取得 | コマンドで取得します。 | [6. 配布元の更新](#upstream-updates) |
+| 同意バナー・設定・保存期間 | `public/cmp-config.mjs` など | [6. 同意設定の検証](#consent) |
+| GitHubの配布元から更新を取得 | コマンドで取得します。 | [7. 配布元の更新](#upstream-updates) |
 
 ターミナルを開き直した場合は、`cd "プロジェクトのフォルダの絶対パス"` で移動します。`ls` を実行して `package.json` が見えることを確認してください。初回のクローン・`cf:setup`・サブドメイン登録をやり直す必要はありません。
 
@@ -228,9 +229,44 @@ npm run cf:deploy
 
 Cookie属性の仕様は[MDNのSet-Cookie解説](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie)も参照してください。
 
+<a id="consent"></a>
+
+## 6. CMPの同意設定を検証・変更する
+
+初回アクセス時に同意バナーが表示されます。「すべて許可」「必須のみ許可」「個別に設定」から選びます。個別設定ではアクセス解析・広告・パーソナライズを切り替え、「この設定を保存」を押します。必須は常に有効です。
+
+**現在はバナー・設定画面・同意内容の保存までの実装です。拒否してもCookieの発行、dataLayerイベント、追加したGTM・GA4等の送信は停止しません。** Google Consent Modeとの接続もまだありません。
+
+### 選択内容を確認・リセットする
+
+1. 「個別に設定」でアクセス解析だけを許可し、保存します。
+2. 左下の「同意設定」に「個別設定」と表示されることを確認します。
+3. 再読み込みして設定画面を開き、アクセス解析だけがオンのままであることを確認します。同じ公開URL内のMPA・SPA・静的ページでも引き継ぎます。
+4. 「必須のみ許可」「すべて許可」でも保存し、表示とチェック状態を確認します。保存せず閉じた変更は反映しません。
+5. 設定画面の「検証用の操作」を開き、「同意設定をリセット」を押すと初回バナーに戻ります。ログイン・カートや既存Cookieは削除しません。
+
+保存先はCookieではなく、ブラウザの **localStorage** です。Chrome・Edgeの開発者ツールで **Application → Local Storage → サイトのURL** を開き、`exture_consent_v1` を確認できます。`analytics`・`marketing`・`personalization` の `true` は許可、`false` は拒否です。`necessary` は常に `true` です。保存日時の `savedAt` と有効期限の `expiresAt` はミリ秒の時刻です。
+
+保存期間は初期値で180日です。期限切れは次回のページ読み込みやタブへ戻った際に判定し、未設定に戻します。同意は会員データやCloudflareのデータベースには保存しません。別ブラウザ・別の公開URLには引き継ぎません。ブラウザが保存を拒否した場合は画面に案内し、そのページ内だけで選択を保持します。
+
+開発者ツールのConsoleでは `window.extureConsent.getState()` でも現在の内容を確認できます。未設定なら `null` です。変更時は `window` に `exture:consent-change` イベントを通知しますが、dataLayerへの同意イベント追加は行いません。
+
+### 編集するファイル
+
+| 変更するもの | 編集するファイル・項目 |
+| --- | --- |
+| バナーの有効・無効 | `public/cmp-config.mjs` の `enabled` です。`false` にすると表示を止めます。保存済みの同意内容は削除しません。 |
+| 保存期間 | 同ファイルの `retentionDays: 180` です。変更後に保存した設定から適用します。 |
+| 既存の同意を取り直す | 同ファイルの `version` を増やします。更新後の再読み込みで古い版の同意を未設定として扱います。 |
+| 各目的の名前・説明 | 同ファイルの `consentCategories` の `label`・`description` です。`id` は保存データの識別名なので、そのままにします。 |
+| バナー・設定画面の文言 | `public/cmp.mjs` です。 |
+| 色・余白・配置 | `public/cmp-styles.mjs` です。 |
+
+保存後は `npm run cf:deploy` を実行し、公開ページを再読み込みします。初回表示を確認したい場合は設定画面からリセットしてください。
+
 <a id="upstream-updates"></a>
 
-## 6. 配布元の更新を取り込む
+## 7. 配布元の更新を取り込む
 
 まず、次を実行して自分の編集が残っていないか確認します。
 
